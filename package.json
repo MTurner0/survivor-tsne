@@ -1,0 +1,21 @@
+{
+  "name": "survivor-tsne",
+  "version": "1.0.0",
+  "description": "Experimenting with t-SNE and visualizations using data from [Dan Oehm's survivoR package](https://github.com/doehm/survivoR).",
+  "main": "tsne-plot.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "deploy": "gh-pages -d ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MTurner0/survivor-tsne.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MTurner0/survivor-tsne/issues"
+  },
+  "homepage": "https://github.com/MTurner0/survivor-tsne#readme"
+}

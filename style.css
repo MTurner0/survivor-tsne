@@ -1,0 +1,34 @@
+
+body {
+    margin: 40px auto;
+    max-width: 650px;
+    line-height: 1.6;
+    font-size: 18px;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    color: #0c2317;
+    padding: 0 10px;
+    text-align: justify;
+    background-color: #fdf9ef;
+}
+
+div#castaway-tsne {
+    position: relative;
+}
+
+.tooltip {
+    position: absolute;
+    visibility: hidden;
+    text-align: center;
+    background-color: #fff;
+    border: solid 1px #000;
+    border-radius: 5px;
+    padding: 5px 10px;
+}
+
+.tooltip-text {
+    font-size: 12px;
+}
+
+circle {
+    fill: #3AA845;
+}
