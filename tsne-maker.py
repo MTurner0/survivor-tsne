@@ -10,8 +10,11 @@ confessionals = pd.read_csv('data/raw/confessionals.csv')
 # Get total confessional count for each castaway
 confessionals = confessionals.loc[:, ['castaway_id', 'season', 'confessional_count']].groupby(['castaway_id', 'season']).sum()
 
+# Replace result with jury status if it exists
+castaways.result = [castaway[15] if pd.notna(castaway[15]) else castaway[14] for castaway in castaways.values]
+
 # Remove cols
-castaways.drop(['city', 'jury_status', 'original_tribe', 'version', 'result', 'order', 'episode',
+castaways.drop(['city', 'jury_status', 'original_tribe', 'version', 'order', 'episode',
                 'version_season'],
     axis=1, inplace=True)
 
@@ -33,8 +36,8 @@ all_contestants = confessionals.merge(castaways,
                                     on='castaway_id').dropna()
 
 # Reserve information to label points
-bio = all_contestants.loc[:, ['full_name', 'season_name', 'state', 'age']]
-all_contestants.drop(['castaway_id', 'season_name', 'full_name', 'short_name', 'castaway', 'day'],
+bio = all_contestants.loc[:, ['full_name', 'season_name', 'state', 'age', 'result']]
+all_contestants.drop(['castaway_id', 'season_name', 'full_name', 'short_name', 'castaway', 'day', 'result'],
                     axis=1, inplace=True)
 
 # Make season categorical
@@ -43,6 +46,9 @@ all_contestants.season = [str(szn) for szn in all_contestants.season]
 # Run t-SNE
 features = pd.get_dummies(all_contestants)
 projected = TSNE(n_components=2, random_state=1416).fit_transform(features)
+
+# Get rid of "Survivor: " in front of every season name
+bio.season_name = [szn_name.split(':')[1] for szn_name in bio.season_name]
 
 # Store reserved info and t-SNE projection coordinates in a JSON file
 pd.concat([bio, pd.DataFrame(projected)],
