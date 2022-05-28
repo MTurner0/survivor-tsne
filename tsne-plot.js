@@ -64,12 +64,56 @@ fetchJson().then((data) => {
 
     // Add a clipPath: everything outside of this region will not be drawn
 
-    //Color scale
+    // Initialize menu
+    const dropdown = d3.select("#castaway-tsne")
+        .append("select");
+
+    dropdown // Add button
+        .selectAll("options")
+            .data(['season_name', 'age', 'result'])
+        .enter()
+            .append("option")
+        .text(function (d) { return d; }) // Show text in the menu
+        .attr("value", function (d) { return d; }); // Return value
+
+    const getColor = (menuSelection) => {
+        if(menuSelection == "age") {
+            let newScale = d3.scaleSequential(d3.interpolateWarm)
+                .domain([ 18, 75 ]);
+            return newScale;
+        }
+        let uniqueSetConstructor = Array();
+        for(let castaway of castArray) {
+            uniqueSetConstructor.push(castaway[menuSelection]);
+        }
+        let uniqueSet = [... new Set(uniqueSetConstructor)].filter(d => {
+            if(d !== null) {
+                return true;
+            } else {
+                return false;
+            }
+        });
+        console.log(uniqueSet);
+        let newScale = d3.scaleOrdinal(d3.schemeCategory10)
+            .domain(uniqueSet);
+        return newScale;
+    }
+
+    dropdown.on("change", function() {
+        let selectedColor = d3.select(this).property("value");
+        console.log(selectedColor);
+
+        let color = getColor(selectedColor);
+
+        scatter
+        .selectAll("circle")
+            .style("fill", d => color(d[selectedColor]));
+
+    })
 
     // Add brushing
 
-    // Add a tooltip div and define general properties (move to CSS)
-    // Its opacity is set to 0: we don't see it by default.
+    // Add a tooltip div
     const tooltip = d3.select("#castaway-tsne")
         .append("div")
         .style("opacity", 1)
@@ -86,8 +130,8 @@ fetchJson().then((data) => {
     const mousemove = function(event, d) {
         tooltip
             .html(`<p class="tooltip-text"><strong>` + d.short_name + `</strong>
-            <br>` + d.full_name + `
-            <br>` + d.season_name + `</p>`)
+            <br>` + d.result + `
+            <br><em>` + d.season_name + `</em></p>`)
             .style("left", (2 * event.x)/3 + "px") // It is important to put the +90: other wise the tooltip is exactly where the point is an it creates a weird effect
             .style("top", (event.y)/2 + "px");
     }
@@ -109,8 +153,7 @@ fetchJson().then((data) => {
         .append("circle")
             .attr("cx", d => x(d["0"]))
             .attr("cy", d => y(d["1"]))
-            .attr("r", 5)
-            .style("fill", "#3AA845")
+            .attr("r", 7)
             .style("opacity", "0.5")
         .on("mouseover", mouseover)
         .on("mousemove", mousemove)
