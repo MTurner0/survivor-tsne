@@ -45,4 +45,5 @@ features = pd.get_dummies(all_contestants)
 projected = TSNE(n_components=2, random_state=1416).fit_transform(features)
 
 # Store reserved info and t-SNE projection coordinates in a JSON file
-pd.concat([bio, pd.DataFrame(projected)], axis=1).to_json('data/processed/tsne-results.json')
+pd.concat([bio, pd.DataFrame(projected)],
+    axis=1).to_json('data/processed/tsne-results.json', orient='index')
