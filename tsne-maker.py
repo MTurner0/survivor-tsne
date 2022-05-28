@@ -36,7 +36,7 @@ all_contestants = confessionals.merge(castaways,
                                     on='castaway_id').dropna()
 
 # Reserve information to label points
-bio = all_contestants.loc[:, ['short_name', 'full_name', 'season_name', 'state', 'age', 'result']]
+bio = all_contestants.copy(deep=True)
 all_contestants.drop(['castaway_id', 'season_name', 'full_name', 'short_name', 'castaway', 'day', 'result'],
                     axis=1, inplace=True)
 

@@ -70,7 +70,7 @@ fetchJson().then((data) => {
 
     dropdown // Add button
         .selectAll("options")
-            .data(['season_name', 'age', 'result'])
+            .data(['Season', 'Age', 'Placement', 'State'])
         .enter()
             .append("option")
         .text(function (d) { return d; }) // Show text in the menu
@@ -82,6 +82,17 @@ fetchJson().then((data) => {
                 .domain([ 18, 75 ]);
             return newScale;
         }
+        if(menuSelection == "prop_sur") {
+            let newScale = d3.scaleSequential(d3.interpolateTurbo)
+                .domain([ 0, 1 ]);
+            return newScale;
+        }
+        if(menuSelection == "season") {
+            let newScale = d3.scaleSequential(d3.interpolateRainbow)
+                .domain([1, 42]);
+            return newScale;
+        }
+        // For state
         let uniqueSetConstructor = Array();
         for(let castaway of castArray) {
             uniqueSetConstructor.push(castaway[menuSelection]);
@@ -99,8 +110,11 @@ fetchJson().then((data) => {
         return newScale;
     }
 
+    // Map menu imput to selection
+    const menuMap = {'Season': 'season', 'State': 'state', 'Placement': 'prop_sur', 'Age': 'age'}
+
     dropdown.on("change", function() {
-        let selectedColor = d3.select(this).property("value");
+        let selectedColor = menuMap[d3.select(this).property("value")];
         console.log(selectedColor);
 
         let color = getColor(selectedColor);
