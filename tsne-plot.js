@@ -12,6 +12,11 @@ const svg = d3.select("#castaway-tsne")
     .attr("transform",
         `translate(${margin.left}, ${margin.top})`);
 
+const leg = d3.select("#legend")
+    .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height / 2);
+
 const url = "data/processed/tsne-results.json";
 
 // This function collects the JSON file
@@ -26,12 +31,95 @@ const fetchJson = async () => {
     }
 };
 
+// This function will convert the JSON readout from an object of objects to an array of arrays
 const processJson = obj => {
     const jsonArray = Array();
     for (let key of Object.keys(obj)) {
         jsonArray.push(obj[key])
     }
     return jsonArray;
+}
+
+// This function will make a sequence (Array if length > 1) of numbers
+function makeSequence(start, end, length) {
+    if(length == 1) {
+        return (start + end)/2;
+    }
+    const increment = (end - start)/(length - 1);
+    const seq = [start];
+    for(let i=0; i<(length - 1); i++) {
+        seq.push(seq[i] + increment)
+    }
+    return seq;
+}
+
+function constructUniqueSet(col, dataArray) {
+    let uniqueSetConstructor = Array();
+    for(let element of dataArray) {
+        uniqueSetConstructor.push(element[col]);
+    }
+    let uniqueSet = [... new Set(uniqueSetConstructor)].filter(d => {
+        if(d !== null) {
+            return true;
+        } else {
+            return false;
+        }
+    });
+    console.log(uniqueSet);
+    return uniqueSet;
+}
+
+function makeLegend(colorScale, title, infoArray, dataArray) {
+    // Clear old legend
+    leg.selectAll("circle")
+        .remove();
+    leg.selectAll("text")
+        .remove();
+
+    // Check whether scale is sequential or ordinal
+    if(infoArray[1] == "seq") {
+        scaleDomain = makeSequence(infoArray[3][0], infoArray[3][1], 5);
+        console.log(scaleDomain);
+        leg.selectAll("circle")
+            .data(scaleDomain)
+            .enter()
+            .append("circle")
+                .attr("cx", function (d, i) { return i*100 })
+                .attr("cy", height / 4)
+                .style("r", 7)
+                .style("fill", function (d) { return colorScale(d) });
+        leg.selectAll("text")
+            .data(scaleDomain)
+            .enter()
+            .append("text")
+                .attr("x", function (d, i) { return i*100 })
+                .attr("y", height / 6)
+                .style("fill", function (d) { return colorScale(d) })
+                .text(function(d) { return Math.round(d) })
+                .style("text-anchor", "middle")
+                .style("alignment-baseline", "middle");
+    } else {
+        scaleDomain = constructUniqueSet(infoArray[0], dataArray);
+        console.log(scaleDomain);
+        leg.selectAll("circle")
+            .data(scaleDomain)
+            .enter()
+            .append("circle")
+                .attr("cx", function (d, i) { return i*50 })
+                .attr("cy", function (d, i) { return height / 5 } )
+                .attr("r", 7)
+                .style("fill", function (d) { return colorScale(d) });
+        leg.selectAll("text")
+            .data(scaleDomain)
+            .enter()
+            .append("text")
+                .attr("x", function (d, i) { return i*50 })
+                .attr("y", function (d, i) { return height / 6 })
+                .style("fill", function (d) { return colorScale(d) })
+                .text(function(d){ return d })
+                .attr("text-anchor", "middle")
+                .style("alignment-baseline", "middle")
+    }
 }
 
 fetchJson().then((data) => {
@@ -103,60 +191,46 @@ fetchJson().then((data) => {
     const dropdown = d3.select("#castaway-tsne")
         .append("select");
 
+    // Map menu imput to selection
+    const menuMap = {'Season': ['season', 'seq', d3.interpolateRainbow, [1, 42]],
+                    'State': ['state', 'ord', d3.schemeCategory10],
+                    'Placement': ['prop_sur', 'seq', d3.interpolateTurbo, [0, 1]],
+                    'Age': ['age', 'seq', d3.interpolateWarm, [18, 75]],
+                    'Personality type': ['personality_type', 'ord', d3.schemeDark2],
+                    'Gender': ['gender', 'ord', d3.schemeAccent]}
+
     dropdown // Add button
         .selectAll("options")
-            .data(['Season', 'Age', 'Placement', 'State'])
+            .data(Object.keys(menuMap))
         .enter()
             .append("option")
         .text(function (d) { return d; }) // Show text in the menu
         .attr("value", function (d) { return d; }); // Return value
 
-    const getColor = (menuSelection) => {
-        if(menuSelection == "age") {
-            let newScale = d3.scaleSequential(d3.interpolateWarm)
-                .domain([ 18, 75 ]);
+    const getColor = (selectionArray) => {
+        if(selectionArray[1] == 'seq') {
+            let newScale = d3.scaleSequential(selectionArray[2])
+                .domain(selectionArray[3]);
             return newScale;
         }
-        if(menuSelection == "prop_sur") {
-            let newScale = d3.scaleSequential(d3.interpolateTurbo)
-                .domain([ 0, 1 ]);
-            return newScale;
-        }
-        if(menuSelection == "season") {
-            let newScale = d3.scaleSequential(d3.interpolateRainbow)
-                .domain([1, 42]);
-            return newScale;
-        }
-        // For state
-        let uniqueSetConstructor = Array();
-        for(let castaway of castArray) {
-            uniqueSetConstructor.push(castaway[menuSelection]);
-        }
-        let uniqueSet = [... new Set(uniqueSetConstructor)].filter(d => {
-            if(d !== null) {
-                return true;
-            } else {
-                return false;
-            }
-        });
-        console.log(uniqueSet);
-        let newScale = d3.scaleOrdinal(d3.schemeCategory10)
-            .domain(uniqueSet);
+        // For ordinal scales
+        let newScale = d3.scaleOrdinal(selectionArray[2])
+            .domain(constructUniqueSet(selectionArray[0], castArray));
         return newScale;
     }
 
-    // Map menu imput to selection
-    const menuMap = {'Season': 'season', 'State': 'state', 'Placement': 'prop_sur', 'Age': 'age'}
-
     dropdown.on("change", function() {
-        let selectedColor = menuMap[d3.select(this).property("value")];
-        console.log(selectedColor);
+        let choice = d3.select(this).property("value");
+        let selectionArray = menuMap[choice];
+        console.log(selectionArray);
 
-        let color = getColor(selectedColor);
+        let color = getColor(selectionArray); // Get new scale
 
         scatter
         .selectAll("circle")
-            .style("fill", d => color(d[selectedColor]));
+            .style("fill", d => color(d[selectionArray[0]]));
+
+        makeLegend(color, choice, selectionArray, castArray);
 
     })
 
