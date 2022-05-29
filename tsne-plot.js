@@ -26,15 +26,6 @@ const fetchJson = async () => {
     }
 };
 
-// Object to array -- DELETE
-const columnsToArray = obj => {
-    for (let key of Object.keys(obj)) {
-        obj[key] = Object.values(obj[key]);
-    }
-    return obj;
-}
-
-
 const processJson = obj => {
     const jsonArray = Array();
     for (let key of Object.keys(obj)) {
@@ -63,6 +54,50 @@ fetchJson().then((data) => {
         .call(d3.axisLeft(y));
 
     // Add a clipPath: everything outside of this region will not be drawn
+    const clip = svg.append("defs")
+        .append("svg:clipPath")
+        .attr("id", "clip")
+        .append("svg:rect")
+        .attr("width", width)
+        .attr("height", height)
+        .attr("x", 0)
+        .attr("y", 0);
+
+    // Define brushing
+    const brush = d3.brush()
+        .extent([ [0,0], [width, height] ])
+        .on("end", updateChart); // Trigger updateChart() each time brush selection changes
+
+    // Set timeout to null
+    let idleTimeout;
+    function idled() { idleTimeout = null; };
+
+    // Update the chart for given boundaries
+    function updateChart() {
+
+        extent = d3.brushSelection(this);
+
+        // If no selection, back to initial coordinates
+        if(!extent) {
+            if(!idleTimeout) return idleTimeout = setTimeout(idled, 350); // Wait a bit before resetting
+            x.domain([ d3.min(castArray, d => d["0"]), d3.max(castArray, d => d["0"])]);
+            y.domain([ d3.min(castArray, d => d["1"]), d3.max(castArray, d => d["1"])]);
+        } else {
+            x.domain([ x.invert(extent[0][0]), x.invert(extent[1][0]) ])
+            y.domain([ y.invert(extent[1][1]), y.invert(extent[0][1])])
+            scatter.select(".brush").call(brush.move, null); // This will remove the grey brush area when finished brushing
+        }
+
+        // Update axis and point positions
+        xAxis.transition().duration(1000).call(d3.axisBottom(x));
+        yAxis.transition().duration(1000).call(d3.axisLeft(y));
+        scatter
+            .selectAll("circle")
+            .transition().duration(1000)
+            .attr("cx", d => x(d["0"]))
+            .attr("cy", d => y(d["1"]));
+
+    }
 
     // Initialize menu
     const dropdown = d3.select("#castaway-tsne")
@@ -125,8 +160,6 @@ fetchJson().then((data) => {
 
     })
 
-    // Add brushing
-
     // Add a tooltip div
     const tooltip = d3.select("#castaway-tsne")
         .append("div")
@@ -158,8 +191,17 @@ fetchJson().then((data) => {
             .style("visibility", "hidden");
     }
 
-    // Add points
-    const scatter = svg.append("g");
+    // Create div for brush and points
+    const scatter = svg.append("g")
+        .attr("clip-path", "url(#clip)");
+
+    // Add brushing -- the brush needs to be appended before the points!
+    // Otherwise the brush will obscure pointer events
+    scatter
+        .append("g")
+            .attr("class", "brush")
+            .call(brush);
+
     scatter
         .selectAll("circle")
         .data(castArray)
