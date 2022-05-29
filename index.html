@@ -5,12 +5,33 @@
     <link href="style.css" rel="stylesheet">
 </head>
 <body>
-    <h1><em>Survivor</em> and the people who play it</h1>
+    <h2>t-Distributed Stochastic Neighbor Embedding with <em>Survivor</em> contestants</h2>
     <!-- Load d3.js -->
     <script src="https://d3js.org/d3.v6.js"></script>
     <!-- Create a div for the graph -->
     <div id="castaway-tsne"></div>
     <script src="tsne-plot.js"></script>
+
+    <div id="description">
+        <p>
+            Visualizing <em>Survivor</em> contestants using <a href="https://github.com/MTurner0/survivor-tsne/blob/main/tsne-maker.py">t-SNE</a>.
+            The embedding includes features such as how many <a href="https://survivor.fandom.com/wiki/Confessional">confessionals</a> a contestant had, how long they lasted in the game, which US state they live in, etc.
+            If a castaway <a href="https://mturner0.github.io/survivor-network-graph/">has appeared on multiple seasons</a>, they will have a separate point for each appearance.
+        </p>
+        <p>
+            Hover over a point to learn about the contestant it represents.
+            Change the drop-down menu to change the color scale (legends coming soon!).
+            Brush over the graph to zoom in, and double-click to reset the axes.
+        </p>
+        <p>
+            Raw data from <a href="https://github.com/doehm/survivoR">Dan Oehm</a>.
+        </p>
+    </div>
+    <div id="footers">
+        <p id="note1">
+            <sup>[1]</sup> Actually, US <em>Survivor</em> just started allowing Canadians to participate two seasons ago, and the winners of the last two seasons have been Canadian.
+        </p>
+    </div>
     <div id="return-2-sender">
         <p>
             <a href="https://mturner0.github.io">Back to my homepage?</a>

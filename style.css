@@ -11,6 +11,10 @@ body {
     background-color: #fdf9ef;
 }
 
+#footers {
+    font-size: 12px;
+}
+
 div#castaway-tsne {
     position: relative;
 }
