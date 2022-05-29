@@ -84,20 +84,26 @@ function makeLegend(colorScale, title, infoArray, dataArray) {
             .data(scaleDomain)
             .enter()
             .append("circle")
-                .attr("cx", function (d, i) { return i*100 })
+                .attr("cx", function (d, i) { return 150 + i*100 })
                 .attr("cy", height / 4)
                 .style("r", 7)
                 .style("fill", function (d) { return colorScale(d) });
+        const placeArray = ["First boot", "Pre-merge boot", "Merge boot", "Juror", "Finale"];
         leg.selectAll("text")
             .data(scaleDomain)
             .enter()
             .append("text")
-                .attr("x", function (d, i) { return i*100 })
+                .attr("x", function (d, i) { return 150 + i*100 })
                 .attr("y", height / 6)
                 .style("fill", function (d) { return colorScale(d) })
-                .text(function(d) { return Math.round(d) })
+                .text(function(d, i) {
+                    if(title == "Placement") {
+                        return placeArray[i];
+                    }
+                    return Math.round(d) })
                 .style("text-anchor", "middle")
-                .style("alignment-baseline", "middle");
+                .style("alignment-baseline", "middle")
+                .style("font-size", "15px");
     } else {
         scaleDomain = constructUniqueSet(infoArray[0], dataArray);
         console.log(scaleDomain);
@@ -119,6 +125,7 @@ function makeLegend(colorScale, title, infoArray, dataArray) {
                 .text(function(d){ return d })
                 .attr("text-anchor", "middle")
                 .style("alignment-baseline", "middle")
+                .style("font-size", "15px");
     }
 }
 
@@ -193,9 +200,10 @@ fetchJson().then((data) => {
 
     // Map menu imput to selection
     const menuMap = {'Season': ['season', 'seq', d3.interpolateRainbow, [1, 42]],
+                    'Confessionals given': ['confessional_count', 'seq', d3.interpolateWarm, [1, 108]],
                     'State': ['state', 'ord', d3.schemeCategory10],
-                    'Placement': ['prop_sur', 'seq', d3.interpolateTurbo, [0, 1]],
-                    'Age': ['age', 'seq', d3.interpolateWarm, [18, 75]],
+                    'Placement': ['prop_sur', 'seq', d3.interpolateTurbo, [0.13, 1]],
+                    'Age': ['age', 'seq', d3.interpolateCool, [18, 75]],
                     'Personality type': ['personality_type', 'ord', d3.schemeDark2],
                     'Gender': ['gender', 'ord', d3.schemeAccent]}
 
