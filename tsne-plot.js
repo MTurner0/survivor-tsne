@@ -12,6 +12,11 @@ const svg = d3.select("#castaway-tsne")
     .attr("transform",
         `translate(${margin.left}, ${margin.top})`);
 
+const leg = d3.select("#legend")
+    .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height / 2);
+
 const url = "data/processed/tsne-results.json";
 
 // This function collects the JSON file
@@ -26,12 +31,139 @@ const fetchJson = async () => {
     }
 };
 
+// This function will convert the JSON readout from an object of objects to an array of arrays
 const processJson = obj => {
     const jsonArray = Array();
     for (let key of Object.keys(obj)) {
         jsonArray.push(obj[key])
     }
     return jsonArray;
+}
+
+// This function will make a sequence (Array if length > 1) of numbers
+function makeSequence(start, end, length) {
+    if(length == 1) {
+        return (start + end)/2;
+    }
+    const increment = (end - start)/(length - 1);
+    const seq = [start];
+    for(let i=0; i<(length - 1); i++) {
+        seq.push(seq[i] + increment)
+    }
+    return seq;
+}
+
+function constructUniqueSet(col, dataArray) {
+    let uniqueSetConstructor = Array();
+    for(let element of dataArray) {
+        uniqueSetConstructor.push(element[col]);
+    }
+    let uniqueSet = [... new Set(uniqueSetConstructor)].filter(d => {
+        if(d !== null) {
+            return true;
+        } else {
+            return false;
+        }
+    });
+    console.log(uniqueSet);
+    return uniqueSet;
+}
+
+function makeLegend(colorScale, title, infoArray, dataArray) {
+    // Clear old legend
+    leg.selectAll("circle")
+        .remove();
+    leg.selectAll("text")
+        .remove();
+
+    // Add title
+    /* leg.append("text")
+        .attr("x", width / 2)
+        .attr("y", margin.top)
+        .text(title)
+        .style("font-size", "18px"); */
+
+    // Check whether scale is sequential or ordinal
+    if(infoArray[1] == "seq") {
+        scaleDomain = makeSequence(infoArray[3][0], infoArray[3][1], 5);
+        console.log(scaleDomain);
+        leg.selectAll("circle")
+            .data(scaleDomain)
+            .enter()
+            .append("circle")
+                .attr("cx", function (d, i) { return 150 + i*100 })
+                .attr("cy", height / 4)
+                .style("r", 7)
+                .style("fill", function (d) { return colorScale(d) });
+        const placeArray = ["First boot", "Pre-merge boot", "Merge boot", "Juror", "Finale"];
+        leg.selectAll("text")
+            .data(scaleDomain)
+            .enter()
+            .append("text")
+                .attr("x", function (d, i) { return 150 + i*100 })
+                .attr("y", height / 6)
+                .style("fill", function (d) { return colorScale(d) })
+                .text(function(d, i) {
+                    if(title == "Placement") { // Special text for Placement scale
+                        return placeArray[i];
+                    }
+                    return Math.round(d) })
+                .style("text-anchor", "middle")
+                .style("alignment-baseline", "middle")
+                .style("font-size", "15px");
+    } else {
+        scaleDomain = constructUniqueSet(infoArray[0], dataArray);
+        let x_pos = makeSequence(margin.left, width - margin.right, scaleDomain.length);
+        let y_pos = [];
+        if(title == "State") {
+            for(let i=0; i<scaleDomain.length; i++) {
+                if(i < 8) {
+                    y_pos.push(100);
+                }
+                if(i < 16) {
+                    y_pos.push(150);
+                } if(i < 24) {
+                    y_pos.push(200);
+                } if(i < 32) {
+                    y_pos.push(250);
+                } if(i < 40) {
+                    y_pos.push(300);
+                } else {
+                    y_pos.push(350);
+                }
+            }
+        } if(title == "Personality type") {
+            for(let i=0; i<scaleDomain.length; i++) {
+                if(i % 2 == 0){
+                    y_pos.push(height / 5);
+                } else { y_pos.push( height / 3); }
+            }
+        } else {
+            for(let i=0; i<scaleDomain.length; i++) {
+                y_pos.push(height / 5);
+            }
+        }
+        console.log(x_pos);
+        leg.selectAll("circle")
+            .data(scaleDomain)
+            .enter()
+            .append("circle")
+                .attr("cx", function (d, i) { return x_pos[i]; })
+                .attr("cy", function (d, i) { return y_pos[i]; } )
+                .attr("r", 7)
+                .style("fill", function (d) { return colorScale(d) });
+        leg.selectAll("text")
+            .data(scaleDomain)
+            .enter()
+            .append("text")
+                .attr("x", function (d, i) { return x_pos[i]; })
+                .attr("y", function (d, i) { return y_pos[i] - 20; })
+                .style("fill", function (d) { return colorScale(d) })
+                .text(function(d){ return d })
+                .attr("text-anchor", "middle")
+                .style("alignment-baseline", "middle")
+                .style("font-size", "13px");
+    }
 }
 
 fetchJson().then((data) => {
@@ -103,60 +235,48 @@ fetchJson().then((data) => {
     const dropdown = d3.select("#castaway-tsne")
         .append("select");
 
+    // Map menu imput to selection
+    const menuMap = {'Season': ['season', 'seq', d3.interpolateRainbow, [1, 42]],
+                    'Confessional count': ['confessional_count', 'seq', d3.interpolateWarm, [1, 108]],
+                    'State': ['state', 'ord', ["#e32636", "#5d8aa8", "#ffbf00", "#9966cc", "#a4c639", "#915c83", "#008000", "#00ffff", "#7fffd4", "#4b5320", "#b2beb5", "#ff9966", "#a52a2a", "#007fff", "#f4c2c2", "#21abcd", "#9f8170", "#3d2b1f", "#8a2be2", "#de5d83", "#cc0000", "#006a4e", "#873260", "#b5a642", "#66ff00", "#d19fe8", "#a52a2a",
+                    "#ffc1cc", "#800020", "#cc5500", "#e97451", "#91a3b0", "#4b3621", "#78866b", "#00cc99", "#ed9121", "#ff0040", "#36454f", "#0047ab", "#8c92ac", "#b87333", "#ff7f50", "#990000", "#00008b", "#1a2421", "#177245", "#ffa812", "#801818", "#df73ff", "#4b0082", "#ff4f00", "#00a86b"]],
+                    'Placement': ['prop_sur', 'seq', d3.interpolateTurbo, [0.13, 1]],
+                    'Age': ['age', 'seq', d3.interpolateCool, [18, 75]],
+                    'Personality type': ['personality_type', 'ord', ["#00a86b", "#a50b5e", "#bdda57", "#5a4fcf", "#ff4f00", "#ccccff", "#26619c", "#20b2aa", "#534b4f", "#800000", "#0067a5", "#ffdb58", "#000080", "#0f0f0f", " #78184a", "#96ded1"]],
+                    'Gender': ['gender', 'ord', d3.schemeAccent]}
+
     dropdown // Add button
         .selectAll("options")
-            .data(['Season', 'Age', 'Placement', 'State'])
+            .data(Object.keys(menuMap))
         .enter()
             .append("option")
         .text(function (d) { return d; }) // Show text in the menu
         .attr("value", function (d) { return d; }); // Return value
 
-    const getColor = (menuSelection) => {
-        if(menuSelection == "age") {
-            let newScale = d3.scaleSequential(d3.interpolateWarm)
-                .domain([ 18, 75 ]);
+    const getColor = (selectionArray) => {
+        if(selectionArray[1] == 'seq') {
+            let newScale = d3.scaleSequential(selectionArray[2])
+                .domain(selectionArray[3]);
             return newScale;
         }
-        if(menuSelection == "prop_sur") {
-            let newScale = d3.scaleSequential(d3.interpolateTurbo)
-                .domain([ 0, 1 ]);
-            return newScale;
-        }
-        if(menuSelection == "season") {
-            let newScale = d3.scaleSequential(d3.interpolateRainbow)
-                .domain([1, 42]);
-            return newScale;
-        }
-        // For state
-        let uniqueSetConstructor = Array();
-        for(let castaway of castArray) {
-            uniqueSetConstructor.push(castaway[menuSelection]);
-        }
-        let uniqueSet = [... new Set(uniqueSetConstructor)].filter(d => {
-            if(d !== null) {
-                return true;
-            } else {
-                return false;
-            }
-        });
-        console.log(uniqueSet);
-        let newScale = d3.scaleOrdinal(d3.schemeCategory10)
-            .domain(uniqueSet);
+        // For ordinal scales
+        let newScale = d3.scaleOrdinal(selectionArray[2])
+            .domain(constructUniqueSet(selectionArray[0], castArray));
         return newScale;
     }
 
-    // Map menu imput to selection
-    const menuMap = {'Season': 'season', 'State': 'state', 'Placement': 'prop_sur', 'Age': 'age'}
-
     dropdown.on("change", function() {
-        let selectedColor = menuMap[d3.select(this).property("value")];
-        console.log(selectedColor);
+        let choice = d3.select(this).property("value");
+        let selectionArray = menuMap[choice];
+        console.log(selectionArray);
 
-        let color = getColor(selectedColor);
+        let color = getColor(selectionArray); // Get new scale
 
         scatter
         .selectAll("circle")
-            .style("fill", d => color(d[selectedColor]));
+            .style("fill", d => color(d[selectionArray[0]]));
+
+        makeLegend(color, choice, selectionArray, castArray);
 
     })
 
