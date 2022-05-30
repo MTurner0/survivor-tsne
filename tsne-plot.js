@@ -76,6 +76,13 @@ function makeLegend(colorScale, title, infoArray, dataArray) {
     leg.selectAll("text")
         .remove();
 
+    // Add title
+    /* leg.append("text")
+        .attr("x", width / 2)
+        .attr("y", margin.top)
+        .text(title)
+        .style("font-size", "18px"); */
+
     // Check whether scale is sequential or ordinal
     if(infoArray[1] == "seq") {
         scaleDomain = makeSequence(infoArray[3][0], infoArray[3][1], 5);
@@ -97,7 +104,7 @@ function makeLegend(colorScale, title, infoArray, dataArray) {
                 .attr("y", height / 6)
                 .style("fill", function (d) { return colorScale(d) })
                 .text(function(d, i) {
-                    if(title == "Placement") {
+                    if(title == "Placement") { // Special text for Placement scale
                         return placeArray[i];
                     }
                     return Math.round(d) })
@@ -106,26 +113,56 @@ function makeLegend(colorScale, title, infoArray, dataArray) {
                 .style("font-size", "15px");
     } else {
         scaleDomain = constructUniqueSet(infoArray[0], dataArray);
-        console.log(scaleDomain);
+        let x_pos = makeSequence(margin.left, width - margin.right, scaleDomain.length);
+        let y_pos = [];
+        if(title == "State") {
+            for(let i=0; i<scaleDomain.length; i++) {
+                if(i < 8) {
+                    y_pos.push(100);
+                }
+                if(i < 16) {
+                    y_pos.push(150);
+                } if(i < 24) {
+                    y_pos.push(200);
+                } if(i < 32) {
+                    y_pos.push(250);
+                } if(i < 40) {
+                    y_pos.push(300);
+                } else {
+                    y_pos.push(350);
+                }
+            }
+        } if(title == "Personality type") {
+            for(let i=0; i<scaleDomain.length; i++) {
+                if(i % 2 == 0){
+                    y_pos.push(height / 5);
+                } else { y_pos.push( height / 3); }
+            }
+        } else {
+            for(let i=0; i<scaleDomain.length; i++) {
+                y_pos.push(height / 5);
+            }
+        }
+        console.log(x_pos);
         leg.selectAll("circle")
             .data(scaleDomain)
             .enter()
             .append("circle")
-                .attr("cx", function (d, i) { return i*50 })
-                .attr("cy", function (d, i) { return height / 5 } )
+                .attr("cx", function (d, i) { return x_pos[i]; })
+                .attr("cy", function (d, i) { return y_pos[i]; } )
                 .attr("r", 7)
                 .style("fill", function (d) { return colorScale(d) });
         leg.selectAll("text")
             .data(scaleDomain)
             .enter()
             .append("text")
-                .attr("x", function (d, i) { return i*50 })
-                .attr("y", function (d, i) { return height / 6 })
+                .attr("x", function (d, i) { return x_pos[i]; })
+                .attr("y", function (d, i) { return y_pos[i] - 20; })
                 .style("fill", function (d) { return colorScale(d) })
                 .text(function(d){ return d })
                 .attr("text-anchor", "middle")
                 .style("alignment-baseline", "middle")
-                .style("font-size", "15px");
+                .style("font-size", "13px");
     }
 }
 
@@ -200,11 +237,12 @@ fetchJson().then((data) => {
 
     // Map menu imput to selection
     const menuMap = {'Season': ['season', 'seq', d3.interpolateRainbow, [1, 42]],
-                    'Confessionals given': ['confessional_count', 'seq', d3.interpolateWarm, [1, 108]],
-                    'State': ['state', 'ord', d3.schemeCategory10],
+                    'Confessional count': ['confessional_count', 'seq', d3.interpolateWarm, [1, 108]],
+                    'State': ['state', 'ord', ["#e32636", "#5d8aa8", "#ffbf00", "#9966cc", "#a4c639", "#915c83", "#008000", "#00ffff", "#7fffd4", "#4b5320", "#b2beb5", "#ff9966", "#a52a2a", "#007fff", "#f4c2c2", "#21abcd", "#9f8170", "#3d2b1f", "#8a2be2", "#de5d83", "#cc0000", "#006a4e", "#873260", "#b5a642", "#66ff00", "#d19fe8", "#a52a2a",
+                    "#ffc1cc", "#800020", "#cc5500", "#e97451", "#91a3b0", "#4b3621", "#78866b", "#00cc99", "#ed9121", "#ff0040", "#36454f", "#0047ab", "#8c92ac", "#b87333", "#ff7f50", "#990000", "#00008b", "#1a2421", "#177245", "#ffa812", "#801818", "#df73ff", "#4b0082", "#ff4f00", "#00a86b"]],
                     'Placement': ['prop_sur', 'seq', d3.interpolateTurbo, [0.13, 1]],
                     'Age': ['age', 'seq', d3.interpolateCool, [18, 75]],
-                    'Personality type': ['personality_type', 'ord', d3.schemeDark2],
+                    'Personality type': ['personality_type', 'ord', ["#00a86b", "#a50b5e", "#bdda57", "#5a4fcf", "#ff4f00", "#ccccff", "#26619c", "#20b2aa", "#534b4f", "#800000", "#0067a5", "#ffdb58", "#000080", "#0f0f0f", " #78184a", "#96ded1"]],
                     'Gender': ['gender', 'ord', d3.schemeAccent]}
 
     dropdown // Add button
